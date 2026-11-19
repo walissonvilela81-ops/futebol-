@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Brasileirão Simulator Pro</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white; 
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .container { max-width: 600px; margin: 0 auto; padding: 10px; }
+        
+        /* Header */
+        .header { 
+            background: rgba(0,0,0,0.3); 
+            padding: 15px; 
+            border-radius: 15px; 
+            margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .header h1 { font-size: 24px; text-align: center; margin-bottom: 5px; }
+        .league-selector { 
+            display: flex; 
+            gap: 10px; 
+            justify-content: center; 
+            margin-top: 10px;
+        }
+        .league-btn { 
+            background: rgba(255,255,255,0.2); 
+            border: 2px solid transparent;
+            color: white; 
+            padding: 10px 20px; 
+            border-radius: 25px; 
+            font-size: 14px; 
+            font-weight: bold;
+            cursor: pointer; 
+            transition: all 0.3s;
+        }
+        .league-btn.active { 
+            background: #f39c12; 
+            border-color: #f1c40f;
+            transform: scale(1.05);
+        }
+        
+        /* Menu Principal */
+        .menu { text-align: center; padding: 40px 20px; }
+        .menu-btn { 
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            margin: 15px auto;
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white; 
+            border: none; 
+            padding: 18px 30px; 
+            border-radius: 30px; 
+            font-size: 18px; 
+            font-weight: bold;
+            cursor: pointer; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+        .menu-btn:active { transform: scale(0.95); }
+        
+        /* Tela de Jogo */
+        .game-screen { display: none; }
+        .match-controls { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 15px;
+        }
+        .control-btn { 
+            flex: 1;
+            background: rgba(255,255,255,0.2); 
+            color: white; 
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 12px; 
+            border-radius: 15px; 
+            font-size: 14px; 
+            font-weight: bold;
+            cursor: pointer; 
+            transition: all 0.3s;
+        }
+        .control-btn:active { background: rgba(255,255,255,0.3); }
+        .control-btn.primary { background: #e74c3c; border-color: #c0392b; }
+        
+        /* Tabela */
+        .table-container { 
+            background: rgba(0,0,0,0.3); 
+            border-radius: 15px; 
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { 
+            background: rgba(0,0,0,0.5); 
+            padding: 12px 8px; 
+            text-align: center; 
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+        td { padding: 10px 8px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        tr:nth-child(even) { background: rgba(255,255,255,0.05); }
+        .team-cell { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+            text-align: left;
+        }
+        .team-logo { 
+            width: 28px; 
+            height: 28px; 
+            object-fit: contain;
+            background: white;
+            border-radius: 50%;
+            padding: 2px;
+        }
+        .pos-1, .pos-2, .pos-3, .pos-4 { color: #27ae60; font-weight: bold; }
+        .pos-17, .pos-18, .pos-19, .pos-20 { color: #e74c3c; font-weight: bold; }
+        
+        /* Modal de Partida */
+        .match-modal { 
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .match-content { 
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .match-header { 
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        .match-teams { 
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 20px 0;
+        }
+        .match-team { 
+            text-align: center;
+            flex: 1;
+        }
+        .match-team img { 
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+        .match-score { 
+            font-size: 48px;
+            font-weight: bold;
+            color: #f39c12;
+        }
+        .match-events { 
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .event-item { 
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            font-size: 14px;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .event-goal { border-left: 4px solid #27ae60; }
+        .event-card { border-left: 4px solid #f39c12; }
+        .event-red { border-left: 4px solid #e74c3c; }
+        
+        .match-stats { 
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .stat-box { 
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-value { font-size: 24px; font-weight: bold; color: #f39c12; }
+        
+        .close-btn { 
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #e74c3c;
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        
+        /* Team Selection Modal */
+        .team-select-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding: 20px;
+        }
+        .team-option {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .team-option:active {
+            background: rgba(255,255,255,0.2);
+            transform: scale(0.95);
+        }
+        .team-option img {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            padding: 3px;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Menu Principal -->
+    <div id="main-menu" class="menu">
+        <div class="header">
+            <h1>⚽ Brasileirão Simulator</h1>
+            <p>Simulador Completo - Séries A, B, C e D</p>
+        </div>
+        <button class="menu-btn" onclick="showTeamSelection()">🎮 Jogar</button>
+        <button class="menu-btn" onclick="loadGame()">📂 Carregar Jogo</button>
+        <button class="menu-btn" onclick="showQuickSim()">⚡ Simulação Rápida</button>
+    </div>
+
+    <!-- Seleção de Time -->
+    <div id="team-select" class="team-select-modal">
+        <button class="close-btn" onclick="closeTeamSelection()">✕</button>
+        <div class="header">
+            <h1>Escolha seu Time</h1>
+            <div class="league-selector">
+                <button class="league-btn active" onclick="selectLeague('A')">Série A</button>
+                <button class="league-btn" onclick="selectLeague('B')">Série B</button>
+                <button class="league-btn" onclick="selectLeague('C')">Série C</button>
+                <button class="league-btn" onclick="selectLeague('D')">Série D</button>
+            </div>
+        </div>
+        <div class="team-grid" id="team-grid"></div>
+    </div>
+
+    <!-- Tela do Jogo -->
+    <div id="game-screen" class="game-screen">
+        <div class="header">
+            <h1 id="league-title">Brasileirão Série A</h1>
+            <p id="round-info">Rodada 1 de 38</p>
+        </div>
+        
+        <div class="match-controls">
+            <button class="control-btn primary" onclick="playNextMatch()">▶️ Jogar Próxima</button>
+            <button class="control-btn" onclick="simAllMatches()">⏩ Simular Tudo</button>
+            <button class="control-btn" onclick="saveGame()">💾 Salvar</button>
+        </div>
+
+        <div class="table-container">
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th style="text-align: left;">Time</th>
+                            <th>P</th>
+                            <th>J</th>
+                            <th>V</th>
+                            <th>E</th>
+                            <th>D</th>
+                            <th>SG</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Partida -->
+<div id="match-modal" class="match-modal">
+    <button class="close-btn" onclick="closeMatch()">✕</button>
+    <div class="match-content">
+        <div class="match-header">
+            <h2 id="match-title">Partida</h2>
+            <div class="match-teams">
+                <div class="match-team">
+                    <img id="home-logo" src="" alt="">
+                    <div id="home-name">Time A</div>
+                </div>
+                <div class="match-score" id="match-score">0 x 0</div>
+                <div class="match-team">
+                    <img id="away-logo" src="" alt="">
+                    <div id="away-name">Time B</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="match-stats">
+            <div class="stat-box">
+                <div>Posse de Bola</div>
+                <div class="stat-value" id="possession">50%</div>
+            </div>
+            <div class="stat-box">
+                <div>Chutes</div>
+                <div class="stat-value" id="shots">0</div>
+            </div>
+            <div class="stat-box">
+                <div>Escanteios</div>
+                <div class="stat-value" id="corners">0</div>
+            </div>
+            <div class="stat-box">
+                <div>Faltas</div>
+                <div class="stat-value" id="fouls">0</div>
+            </div>
+        </div>
+        
+        <div class="match-events" id="match-events">
+            <h3>Eventos da Partida</h3>
+        </div>
+    </div>
+</div>
+
+<script>
+    // URLs de logos reais dos times (fontes públicas)
+    const teamLogos = {
+        // Série A
+        "Flamengo": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Flamengo_brazill.svg/200px-Flamengo_brazill.svg.png",
+        "Palmeiras": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Palmeiras_logo.svg/200px-Palmeiras_logo.svg.png",
+        "Atlético-MG": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Atletico_Mineiro_logo.svg/200px-Atletico_Mineiro_logo.svg.png",
+        "São Paulo": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Sao_Paulo_FC_logo.svg/200px-Sao_Paulo_FC_logo.svg.png",
+        "Corinthians": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Corinthians_logo.svg/200px-Corinthians_logo.svg.png",
+        "Fluminense": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Fluminense_FC_logo.svg/200px-Fluminense_FC_logo.svg.png",
+        "Grêmio": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Grêmio Foot-Ball Porto Alegrense logo.svg/200px-Grêmio_Foot-Ball_Porto_Alegrense_logo.svg.png",
+        "Internacional": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Sport_Club_Internacional_logo.svg/200px-Sport_Club_Internacional_logo.svg.png",
+        "Athletico-PR": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Athletico_Paranaense_logo.svg/200px-Athletico_Paranaense_logo.svg.png",
+        "Botafogo": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Botafogo_de_Futebol_e_Regatas_logo.svg/200px-Botafogo_de_Futebol_e_Regatas_logo.svg.png",
+        "Santos": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Santos_FC_logo.svg/200px-Santos_FC_logo.svg.png",
+        "Vasco": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/CR_Vasco_da_Gama_logo.svg/200px-CR_Vasco_da_Gama_logo.svg.png",
+        "Bahia": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Bahia_logo.svg/200px-Bahia_logo.svg.png",
+        "Cruzeiro": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Cruzeiro_Esporte_Clube_logo_%282003-2013%29.svg/200px-Cruzeiro_Esporte_Clube_logo_%282003-2013%29.svg.png",
+        "Fortaleza": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Fortaleza_EC_logo.svg/200px-Fortaleza_EC_logo.svg.png",
+        "Bragantino": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Red_Bull_Bragantino_logo.svg/200px-Red_Bull_Bragantino_logo.svg.png",
+        "Cuiabá": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Cuiab%C3%A1_EC_logo.svg/200px-Cuiab%C3%A1_EC_logo.svg.png",
+        "Goiás": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Goi%C3%A1s_EC_logo.svg/200px-Goi%C3%A1s_EC_logo.svg.png",
+        "Coritiba": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Coritiba_Foot_Ball_Club_logo.svg/200px-Coritiba_Foot_Ball_Club_logo.svg.png",
+        "América-MG": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Am%C3%A9rica_Futebol_Clube_%28MG%29_logo.svg/200px-Am%C3%A9rica_Futebol_Clube_%28MG%29_logo.svg.png",
+        
+        // Série B
+        "Sport": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Sport_Club_do_Recife_logo.svg/200px-Sport_Club_do_Recife_logo.svg.png",
+        "Ceará": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Cear%C3%A1_Sporting_Club_logo.svg/200px-Cear%C3%A1_Sporting_Club_logo.svg.png",
+        "Vitória": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Esporte_Clube_Vit%C3%B3ria_logo.svg/200px-Esporte_Clube_Vit%C3%B3ria_logo.svg.png",
+        "Guarani": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Guarani_FC_logo.svg/200px-Guarani_FC_logo.svg.png",
+        "Ponte Preta": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/AA_Ponte_Preta_logo.svg/200px-AA_Ponte_Preta_logo.svg.png",
+        "Chapecoense": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Associação_Chapecoense_de_Futebol_logo.svg/200px-Associação_Chapecoense_de_Futebol_logo.svg.png",
+        "CRB": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/CRB_logo.svg/200px-CRB_logo.svg.png",
+        "CSA": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/CSA_logo.svg/200px-CSA_logo.svg.png",
+        "Novorizontino": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Grêmio_Novorizontino_logo.svg/200px-Grêmio_Novorizontino_logo.svg.png",
+        "Mirassol": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Mirassol_FC_logo.svg/200px-Mirassol_FC_logo.svg.png",
+        "Vila Nova": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Vila_Nova_FC_logo.svg/200px-Vila_Nova_FC_logo.svg.png",
+        "Ituano": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Ituano_FC_logo.svg/200px-Ituano_FC_logo.svg.png",
+        "Tombense": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Tombense_FC_logo.svg/200px-Tombense_FC_logo.svg.png",
+        "Londrina": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Londrina_EC_logo.svg/200px-Londrina_EC_logo.svg.png",
+        "Brusque": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Brusque_FC_logo.svg/200px-Brusque_FC_logo.svg.png",
+        "Operário-PR": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Operário_Ferroviário_EC_logo.svg/200px-Operário_Ferroviário_EC_logo.svg.png",
+        "Sampaio Corrêa": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Sampaio_Corr%C3%AAa_FC_logo.svg/200px-Sampaio_Corr%C3%AAa_FC_logo.svg.png",
+        "Náutico": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Clube_N%C3%A1utico_Capibaribe_logo.svg/200px-Clube_N%C3%A1utico_Capibaribe_logo.svg.png",
+        "Avaí": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Ava%C3%AD_FC_logo.svg/200px-Ava%C3%AD_FC_logo.svg.png",
+        "Juventude": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/EC_Juventude_logo.svg/200px-EC_Juventude_logo.svg.png",
+        
+        // Série C
+        "ABC": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/ABC_FC_logo.svg/200px-ABC_FC_logo.svg.png",
+        "Volta Redonda": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/VRFC_logo.svg/200px-VRFC_logo.svg.png",
+        "Ferroviária": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/AF_logo.svg/200px-AF_logo.svg.png",
+        "Ypiranga": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Ypiranga_FC_logo.svg/200px-Ypiranga_FC_logo.svg.png",
+        "Manaus": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Manaus_FC_logo.svg/200px-Manaus_FC_logo.svg.png",
+        "Floresta": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Floresta_EC_logo.svg/200px-Floresta_EC_logo.svg.png",
+        "Confiança": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/AD_Confiança_logo.svg/200px-AD_Confiança_logo.svg.png",
+        "Remo": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Remo_logo.svg/200px-Remo_logo.svg.png",
+        "Paysandu": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Paysandu_SC_logo.svg/200px-Paysandu_SC_logo.svg.png",
+        "Santa Cruz": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Santa_Cruz_FC_logo.svg/200px-Santa_Cruz_FC_logo.svg.png",
+        "Botafogo-PB": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Botafogo_PB_logo.svg/200px-Botafogo_PB_logo.svg.png",
+        "Campinense": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Campinense_logo.svg/200px-Campinense_logo.svg.png",
+        "Treze": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Treze_FC_logo.svg/200px-Treze_FC_logo.svg.png",
+        "Altos": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Altos_EC_logo.svg/200px-Altos_EC_logo.svg.png",
+        "São Bernardo": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/São_Bernardo_FC_logo.svg/200px-São_Be
